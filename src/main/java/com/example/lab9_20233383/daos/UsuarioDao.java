@@ -1,0 +1,67 @@
+package com.example.lab9_20233383.daos;
+
+import com.example.lab9_20233383.beans.Usuario;
+import com.example.lab9_20233383.utils.HashUtil;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class UsuarioDao extends BaseDao{
+
+
+    public boolean existeEmail(String email){
+        String sql = "SELECT 1 FROM usuario WHERE email = ?";
+        try (Connection conn = this.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)){
+            pstmt.setString(1,email);
+            try(ResultSet rs = pstmt.executeQuery()){
+                return rs.next();
+            }
+        }   catch (SQLException ex){
+            ex.printStackTrace();
+        }
+        return false;
+    }
+
+    public void registrarUsuario(Usuario usuario, String password){
+        String sql = "INSERT INTO usuario (nombres,apellidos,email,password_hash,rol,estado)"
+                + "VALUES (?,?,?,SHA2(?,256), 'LECTOR', 'ACTIVO')";
+
+        try (Connection conn = this.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)){
+            pstmt.setString(1, usuario.getNombres());
+            pstmt.setString(2, usuario.getApellidos());
+            pstmt.setString(3, usuario.getEmail());
+            pstmt.setString(4, password);
+            pstmt.executeUpdate();
+        } catch(SQLException ex){
+            ex.printStackTrace();
+        }
+    }
+
+    public Usuario validarUsuarioPassword(String email, String password){
+        Usuario usario = null;
+        String sql = "SELECT * FROM usuario WHERE email = ? AND password_hash = SHA2(?,256) AND estado = 'ACTIVO'";
+        try(Connection conn = this.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)){
+            pstmt.setString(1,email);
+            pstmt.setString(1,password);
+            try(ResultSet rs = pstmt.executeQuery()){
+                if(rs.next()){
+                    usuario = new Usuario();
+                    usuario.setIdUsuario(rs.getInt("id_usuario"));
+                    usuario.setNombres(rs.getString("nombres"));
+                    usuario.setApellidos(rs.getString("apellidos"));
+                    usuario.setEmail(rs.getString("email"));
+                    usuario.setRol(rs.getString("rol"));
+                    usuario.setEstado(rs.getString("estado"));
+                }
+            }
+    }catch (SQLException ex){
+            ex.printStackTrace();
+        }
+    }
+    return usuario;
+}
